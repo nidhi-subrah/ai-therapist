@@ -1,65 +1,7 @@
-import Link from 'next/link';
-import { getSession } from '@/lib/auth-helpers';
-import { Button } from '@/components/ui/button';
+import Image from "next/image";
+import ChatInterface from "@/components/ChatInterface";
 
-export default async function Home() {
-  const session = await getSession();
-
-  if (session?.user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="max-w-3xl mx-auto space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-              Welcome back, {session.user.name || session.user.email}!
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Continue your mental health journey with AI Therapist.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-            <Link href="/chat">
-              <div className="p-6 border rounded-lg bg-card hover:bg-card/80 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">Start Chat Session</h3>
-                <p className="text-sm text-muted-foreground">
-                  Begin a new conversation with your AI therapist.
-                </p>
-              </div>
-            </Link>
-            
-            <Link href="/check-in">
-              <div className="p-6 border rounded-lg bg-card hover:bg-card/80 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">Daily Mood Check-in</h3>
-                <p className="text-sm text-muted-foreground">
-                  Track today&apos;s emotional state and stress levels.
-                </p>
-              </div>
-            </Link>
-            
-            <Link href="/progress">
-              <div className="p-6 border rounded-lg bg-card hover:bg-card/80 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">View Progress</h3>
-                <p className="text-sm text-muted-foreground">
-                  See your mental health journey over time.
-                </p>
-              </div>
-            </Link>
-            
-            <Link href="/settings">
-              <div className="p-6 border rounded-lg bg-card hover:bg-card/80 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">Account Settings</h3>
-                <p className="text-sm text-muted-foreground">
-                  Manage your account and preferences.
-                </p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
       <div className="max-w-3xl mx-auto space-y-8">
@@ -95,14 +37,16 @@ export default async function Home() {
           </div>
         </div>
         
-        <div className="flex justify-center space-x-4 mt-8">
-          <Link href="/signup">
-            <Button size="lg">Get Started</Button>
-          </Link>
-          <Link href="/signin">
-            <Button variant="outline" size="lg">Sign In</Button>
-          </Link>
+        <div className="mt-8">
+          <p className="text-sm text-muted-foreground">
+            Start your mental health journey today with our AI therapist.
+          </p>
         </div>
+      </div>
+
+      {/* Chat Interface */}
+      <div className="w-full max-w-4xl mt-12">
+        <ChatInterface />
       </div>
     </div>
   );
