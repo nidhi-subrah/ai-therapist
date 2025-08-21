@@ -44,7 +44,7 @@ export default function SignUpPage() {
       }
 
       // Redirect to sign in page after successful signup
-      router.push('/signin?message=Account created successfully! Please sign in.');
+      router.push('/signin?message=Account created successfully! Check your email for a welcome message, then sign in.');
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);
@@ -92,6 +92,10 @@ export default function SignUpPage() {
           isLoading={isLoading}
           error={error}
         />
+        
+        <div className="text-center text-sm text-gray-500">
+          <p>📧 You'll receive a welcome email after signing up</p>
+        </div>
         
         <div className="text-center">
           <p className="text-sm text-gray-600">

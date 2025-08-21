@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
-import Session from '@/lib/models/Session';
+import { Session } from '@/models';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -19,9 +21,12 @@ function buildConversation(conversation: ChatMessage[] = [], latestUser: string)
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, userId, conversation } = (await request.json()) as {
+    // Get user session for authentication
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    
+    const { message, conversation } = (await request.json()) as {
       message: string;
-      userId?: string | null;
       conversation?: ChatMessage[];
     };
 
@@ -102,20 +107,45 @@ Keep responses conversational, supportive, and focused on the user's emotional w
 
     console.log('Final response length:', aiResponse.length);
 
+    // Save or update the conversation session if user is authenticated
     if (userId) {
       try {
         await dbConnect();
-        const session = new (Session as any)({
+        
+        // Check if there's an active session from the last 30 minutes
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        let activeSession = await Session.findOne({
           userId,
-          messages: [
-            { role: 'user', content: message },
-            { role: 'assistant', content: aiResponse },
-          ],
-        });
-        await session.save();
+          updatedAt: { $gte: thirtyMinutesAgo },
+          'messages.role': 'assistant' // Make sure it has at least one AI response
+        }).sort({ updatedAt: -1 });
+
+        if (activeSession) {
+          // Add new messages to existing session
+          activeSession.messages.push(
+            { role: 'user', content: message, timestamp: new Date() },
+            { role: 'assistant', content: aiResponse, timestamp: new Date() }
+          );
+          activeSession.updatedAt = new Date();
+          await activeSession.save();
+          console.log('Updated existing chat session for user:', userId);
+        } else {
+          // Create new session
+          const newSession = new Session({
+            userId,
+            messages: [
+              { role: 'user', content: message, timestamp: new Date() },
+              { role: 'assistant', content: aiResponse, timestamp: new Date() },
+            ],
+          });
+          await newSession.save();
+          console.log('Created new chat session for user:', userId);
+        }
       } catch (persistErr) {
-        console.warn('Session save skipped:', persistErr);
+        console.error('Failed to save chat session:', persistErr);
       }
+    } else {
+      console.log('No user ID found, skipping session save');
     }
 
     return NextResponse.json({ success: true, response: aiResponse });

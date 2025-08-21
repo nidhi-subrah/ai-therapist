@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDB } from '@/lib/db';
+import dbConnect from '@/lib/db';
 import { User } from '@/models';
 import { hashPassword } from '@/lib/password';
+import { sendWelcomeEmail } from '@/lib/email';
 import { z } from 'zod';
 
 const signUpSchema = z.object({
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = signUpSchema.parse(body);
 
-    await connectToDB();
+    await dbConnect();
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: validatedData.email.toLowerCase() });
@@ -34,6 +35,15 @@ export async function POST(request: NextRequest) {
       name: validatedData.name,
       hashedPassword,
     });
+
+    // Send welcome email (don't wait for it to complete)
+    try {
+      sendWelcomeEmail(user.email, user.name).catch(err => 
+        console.warn('Failed to send welcome email:', err)
+      );
+    } catch (emailError) {
+      console.warn('Email sending failed:', emailError);
+    }
 
     // Return success without sensitive data
     return NextResponse.json(

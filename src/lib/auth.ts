@@ -23,15 +23,18 @@ export const authOptions: NextAuthOptions = {
           const user = await User.findOne({ email: credentials.email.toLowerCase() });
           
           if (!user) {
+            console.log('User not found:', credentials.email);
             return null;
           }
 
           const isPasswordValid = await comparePassword(credentials.password, user.hashedPassword);
           
           if (!isPasswordValid) {
+            console.log('Invalid password for user:', credentials.email);
             return null;
           }
 
+          console.log('User authenticated successfully:', credentials.email);
           return {
             id: user._id.toString(),
             email: user.email,
@@ -46,6 +49,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -72,4 +76,5 @@ export const authOptions: NextAuthOptions = {
     signIn: '/signin',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 };

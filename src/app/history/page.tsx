@@ -54,62 +54,57 @@ export default function HistoryPage() {
 
   const fetchConversationHistory = async () => {
     try {
-      // This would fetch from your API endpoint
-      // For now, using mock data to demonstrate
-      const mockConversations: Conversation[] = [
-        {
-          id: '1',
-          startedAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-          endedAt: new Date(Date.now() - 86400000 + 1800000).toISOString(), // 30 min later
-          messages: [
-            { role: 'user', content: 'I am feeling anxious about my upcoming presentation' },
-            { role: 'assistant', content: 'It sounds like you are feeling quite anxious about your presentation. That is completely understandable; public speaking can be nerve-wracking for almost everyone. Can you tell me a little more about what specifically is making you anxious?' },
-            { role: 'user', content: 'I think it is the pressure to perform well and not disappoint my boss' },
-            { role: 'assistant', content: 'That makes perfect sense. The pressure to perform well and meet your boss expectations can definitely be a major source of anxiety. It sounds like you care deeply about doing a good job and that admirable.' }
-          ],
-          summary: 'Discussed presentation anxiety and work pressure',
-          crisisFlag: false,
-          moodTrend: 'improving'
-        },
-        {
-          id: '2',
-          startedAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-          endedAt: new Date(Date.now() - 172800000 + 2400000).toISOString(), // 40 min later
-          messages: [
-            { role: 'user', content: 'I have been feeling overwhelmed with work lately' },
-            { role: 'assistant', content: 'I can see you have been dealing with anxiety and stress. It sounds like this has been building up. What specific aspect feels most overwhelming right now?' }
-          ],
-          summary: 'Discussed work stress and feeling overwhelmed',
-          crisisFlag: false,
-          moodTrend: 'stable'
-        }
-      ];
-
-      setConversations(mockConversations);
+      const response = await fetch('/api/history');
       
-      // Calculate insights
-      const totalMessages = mockConversations.reduce((acc, conv) => acc + conv.messages.length, 0);
-      const totalSessions = mockConversations.length;
-      const averageSessionLength = totalSessions > 0 ? totalMessages / totalSessions : 0;
+      if (!response.ok) {
+        throw new Error('Failed to fetch history');
+      }
       
-      const commonThemes = ['anxiety', 'work stress', 'presentations', 'pressure'];
-      const moodTrend = mockConversations[0]?.moodTrend || 'stable';
-      const lastSession = mockConversations[0]?.startedAt || '';
+      const data = await response.json();
+      console.log('History API response:', data);
+      
+      if (data.success) {
+        // Transform sessions to match our interface
+        const transformedConversations: Conversation[] = data.sessions.map((session: any) => ({
+          id: session._id,
+          startedAt: session.createdAt,
+          endedAt: session.updatedAt !== session.createdAt ? session.updatedAt : undefined,
+          messages: session.messages.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          summary: session.summary || generateSummary(session.messages),
+          crisisFlag: false, // We'll implement crisis detection later
+          moodTrend: 'stable' // We'll implement mood analysis later
+        }));
 
-      setInsights({
-        totalSessions,
-        totalMessages,
-        averageSessionLength: Math.round(averageSessionLength),
-        commonThemes,
-        moodTrend,
-        lastSession
-      });
+        console.log('Transformed conversations:', transformedConversations);
+        setConversations(transformedConversations);
+        setInsights(data.insights);
+      }
 
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch conversation history:', error);
       setLoading(false);
     }
+  };
+
+  const generateSummary = (messages: any[]): string => {
+    if (messages.length === 0) return '';
+    
+    const userMessages = messages.filter(m => m.role === 'user').map(m => m.content).join(' ');
+    const words = userMessages.toLowerCase().split(' ');
+    
+    // Simple keyword-based summary
+    const keywords = ['anxiety', 'stress', 'work', 'family', 'relationship', 'sleep', 'exercise', 'depression', 'anger', 'fear'];
+    const foundKeywords = keywords.filter(keyword => words.includes(keyword));
+    
+    if (foundKeywords.length > 0) {
+      return `Discussed ${foundKeywords.slice(0, 3).join(', ')}`;
+    }
+    
+    return `Session with ${messages.length} messages`;
   };
 
   const getMoodTrendColor = (trend: string) => {
@@ -144,6 +139,19 @@ export default function HistoryPage() {
       </div>
 
       {/* Progress Insights */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">Progress Insights</h2>
+        <Button 
+          onClick={fetchConversationHistory}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <Activity className="w-4 h-4" />
+          Refresh
+        </Button>
+      </div>
+      
       {insights && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>

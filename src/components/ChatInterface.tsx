@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Send, MessageCircle } from 'lucide-react';
 
 interface Message {
@@ -10,6 +11,7 @@ interface Message {
 }
 
 export default function ChatInterface() {
+  const { data: session } = useSession();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +51,7 @@ export default function ChatInterface() {
         },
         body: JSON.stringify({
           message: inputMessage,
-          userId: null // We'll add user authentication later
+          conversation: messages.map(m => ({ role: m.role, content: m.content }))
         }),
       });
 
@@ -116,6 +118,16 @@ export default function ChatInterface() {
         <p className="text-sm opacity-90 mt-1">
           Your compassionate AI companion for emotional support
         </p>
+        {!session?.user?.id && (
+          <p className="text-xs opacity-75 mt-2">
+            💡 Sign in to save your conversations and track progress
+          </p>
+        )}
+        {session?.user?.id && (
+          <p className="text-xs opacity-75 mt-2">
+            ✅ Signed in as {session.user.email} - conversations will be saved
+          </p>
+        )}
       </div>
 
       {/* Messages Area */}
