@@ -36,7 +36,7 @@ export default function SignInPage() {
       }
 
       if (result?.ok) {
-        router.push('/chat');
+        router.push('/history');
         router.refresh();
       }
     } catch (err) {
@@ -80,7 +80,23 @@ export default function SignInPage() {
           error={error}
         />
         
-        <div className="text-center">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-gray-50 px-2 text-gray-500">Or</span>
+            </div>
+          </div>
+          
+          <Link 
+            href="/anonymous"
+            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          >
+            Continue Anonymously
+          </Link>
+          
           <p className="text-sm text-gray-600">
             Don&apos;t have an account?{' '}
             <Link href="/signup" className="font-medium text-primary hover:text-primary/80">

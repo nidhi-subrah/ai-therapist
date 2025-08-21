@@ -36,10 +36,19 @@ export default function HistoryPage() {
   const [insights, setInsights] = useState<ProgressInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [anonymousUser, setAnonymousUser] = useState<any>(null);
 
   useEffect(() => {
-    if (session?.user?.id) {
+    // Check for anonymous user
+    const stored = localStorage.getItem('anonymousUser');
+    if (stored) {
+      setAnonymousUser(JSON.parse(stored));
       fetchConversationHistory();
+    } else if (session?.user?.id) {
+      fetchConversationHistory();
+    } else {
+      // No user session, redirect to signin
+      window.location.href = '/signin';
     }
   }, [session]);
 
