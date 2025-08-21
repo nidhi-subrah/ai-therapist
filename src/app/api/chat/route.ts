@@ -27,12 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Connect once per lambda cold start
-    await dbConnect();
-
-    // Compose a gentle, trauma‑informed prompt
-    const system = `You are a compassionate AI therapist. Be supportive, empathetic, and validation‑forward. 
-Keep boundaries: do not give medical advice or crisis instructions. Suggest professional help when appropriate.`;
+    const system = `You are a compassionate AI therapist. Be supportive, empathetic, and validation‑forward. \nKeep boundaries: do not give medical advice or crisis instructions. Suggest professional help when appropriate.`;
 
     let aiResponse = '';
     try {
@@ -49,7 +44,6 @@ Keep boundaries: do not give medical advice or crisis instructions. Suggest prof
       });
       aiResponse = (response as any).generated_text?.trim() || '';
     } catch (inferenceErr) {
-      // Graceful fallback when the model is loading/rate-limited
       aiResponse =
         "I'm here with you. Thank you for sharing that. It sounds like this has been heavy to carry. " +
         'What part feels most present right now? If you’re in immediate danger, please reach out to local emergency services.';
@@ -60,9 +54,10 @@ Keep boundaries: do not give medical advice or crisis instructions. Suggest prof
         "I'm listening. Can you tell me a little more about what you’re feeling in this moment?";
     }
 
-    // Save a lightweight session record when a user id is provided
+    // Attempt to persist only if a user id was provided; never block the response
     if (userId) {
       try {
+        await dbConnect();
         const session = new (Session as any)({
           userId,
           messages: [
@@ -71,8 +66,8 @@ Keep boundaries: do not give medical advice or crisis instructions. Suggest prof
           ],
         });
         await session.save();
-      } catch {
-        // Don’t fail the request if persistence fails
+      } catch (persistErr) {
+        console.warn('Session save skipped:', persistErr);
       }
     }
 
