@@ -1,6 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { connectToDB } from './db';
+import dbConnect from './db';
 import { User } from '@/models';
 import { comparePassword } from './password';
 
@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          await connectToDB();
+          await dbConnect();
           
           const user = await User.findOne({ email: credentials.email.toLowerCase() });
           
@@ -58,8 +58,11 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
+        // @ts-expect-error augmenting session type elsewhere
         session.user.id = token.id as string;
+        // @ts-expect-error augmenting session type elsewhere
         session.user.email = token.email as string;
+        // @ts-expect-error augmenting session type elsewhere
         session.user.name = token.name as string | undefined;
       }
       return session;

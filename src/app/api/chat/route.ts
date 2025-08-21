@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HfInference } from '@huggingface/inference';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dbConnect from '@/lib/db';
 import Session from '@/lib/models/Session';
 
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+
+type ChatMessage = { role: 'user' | 'assistant' | 'system'; content: string };
+
+function buildConversation(conversation: ChatMessage[] = [], latestUser: string) {
+  // Take more context (last 20 messages) for better learning
+  const trimmed = conversation
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(-20)
+    .map((m) => ({ role: m.role, content: m.content }));
+  
+  return trimmed;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, userId } = await request.json();
+    const { message, userId, conversation } = (await request.json()) as {
+      message: string;
+      userId?: string | null;
+      conversation?: ChatMessage[];
+    };
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -16,45 +32,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.HUGGINGFACE_API_KEY) {
+    console.log('Google AI API Key exists:', !!process.env.GOOGLE_AI_API_KEY);
+    console.log('Conversation length:', conversation?.length || 0);
+
+    if (!process.env.GOOGLE_AI_API_KEY) {
       return NextResponse.json(
         {
           success: false,
           error:
-            'Hugging Face API key not configured. Please add HUGGINGFACE_API_KEY to .env.local.',
+            'Google AI API key not configured. Please add GOOGLE_AI_API_KEY to .env.local.',
         },
         { status: 500 }
       );
     }
 
-    const system = `You are a compassionate AI therapist. Be supportive, empathetic, and validation‑forward. \nKeep boundaries: do not give medical advice or crisis instructions. Suggest professional help when appropriate.`;
+    const systemPrompt = `You are a compassionate, professional AI therapist. Your role is to:
+
+1. **Listen and Validate**: Acknowledge feelings and experiences without judgment
+2. **Ask Insightful Questions**: Help users explore their thoughts and feelings deeper
+3. **Provide Support**: Offer gentle guidance and coping strategies
+4. **Maintain Boundaries**: Never give medical advice or crisis instructions
+5. **Build on Context**: Remember previous conversation and build meaningful dialogue
+6. **Be Human**: Respond naturally, not robotically - show genuine care
+
+IMPORTANT: If someone mentions self-harm, suicide, or immediate crisis, respond with:
+"I'm very concerned about what you're sharing. Your safety is the most important thing right now. Please call the National Suicide Prevention Lifeline at 988 or 911 immediately. You're not alone, and help is available."
+
+Keep responses conversational, supportive, and focused on the user's emotional well-being.`;
+
+    // Build conversation history for Google AI
+    const conversationHistory = buildConversation(conversation, message);
+    const messages: any[] = [
+      { role: 'user', content: `${systemPrompt}\n\n${conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n')}\nUser: ${message}` }
+    ];
+
+    console.log('Sending to Google AI with conversation history');
 
     let aiResponse = '';
+
     try {
-      const response = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: `${system}\n\nUser: ${message}\nTherapist:`,
-        parameters: {
-          max_new_tokens: 180,
-          temperature: 0.7,
-          top_p: 0.9,
-          repetition_penalty: 1.1,
-          return_full_text: false,
-        },
-      });
-      aiResponse = (response as any).generated_text?.trim() || '';
-    } catch (inferenceErr) {
-      aiResponse =
-        "I'm here with you. Thank you for sharing that. It sounds like this has been heavy to carry. " +
-        'What part feels most present right now? If you’re in immediate danger, please reach out to local emergency services.';
+      console.log('Calling Google AI API...');
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const result = await model.generateContent(messages[0].content);
+      aiResponse = result.response.text().trim();
+      
+      console.log('Google AI success, response length:', aiResponse.length);
+      console.log('Response preview:', aiResponse.substring(0, 100) + '...');
+      
+    } catch (error) {
+      console.error('Google AI API failed:', error);
+      
+      // Smart fallback based on conversation context
+      const userMessages = conversation?.filter(m => m.role === 'user') || [];
+      const recentTopics = userMessages.slice(-3).map(m => m.content.toLowerCase());
+      
+      if (recentTopics.some(topic => topic.includes('anxious') || topic.includes('stress'))) {
+        aiResponse = "I can see you've been dealing with anxiety and stress. It sounds like this has been building up. What specific aspect feels most overwhelming right now? Sometimes breaking it down helps us see it more clearly.";
+      } else if (recentTopics.some(topic => topic.includes('work') || topic.includes('job'))) {
+        aiResponse = "Work stress can really take a toll. You've mentioned this a few times now. What would it look like to set some boundaries or take small steps toward feeling more in control?";
+      } else if (recentTopics.some(topic => topic.includes('relationship') || topic.includes('friend'))) {
+        aiResponse = "Relationships can be complex and challenging. I'm hearing that this is really affecting you. What feels most important to address first? Sometimes starting with one small thing can make a big difference.";
+      } else if (recentTopics.some(topic => topic.includes('presentation') || topic.includes('speaking'))) {
+        aiResponse = "Presentations can be really nerve-wracking. I can hear how much this is affecting you. What specifically about the presentation feels most challenging? Sometimes understanding the root of our anxiety helps us address it.";
+      } else {
+        aiResponse = "I'm here with you, and I can see this has been weighing on you. Based on what you've shared, what feels most present or urgent right now? I want to make sure we're focusing on what matters most to you.";
+      }
     }
 
-    if (!aiResponse) {
-      aiResponse =
-        "I'm listening. Can you tell me a little more about what you’re feeling in this moment?";
-    }
+    console.log('Final response length:', aiResponse.length);
 
-    // Attempt to persist only if a user id was provided; never block the response
     if (userId) {
       try {
         await dbConnect();
