@@ -3,87 +3,87 @@ import { HfInference } from '@huggingface/inference';
 import dbConnect from '@/lib/db';
 import Session from '@/lib/models/Session';
 
-// Initialize Hugging Face client (completely free!)
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
     const { message, userId } = await request.json();
 
-    if (!message) {
+    if (!message || typeof message !== 'string') {
       return NextResponse.json(
-        { error: 'Message is required' },
+        { success: false, error: 'Message is required' },
         { status: 400 }
       );
     }
 
-    // Check if Hugging Face API key is configured
     if (!process.env.HUGGINGFACE_API_KEY) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Hugging Face API key not configured. Please add your API key to .env.local file.' 
+        {
+          success: false,
+          error:
+            'Hugging Face API key not configured. Please add HUGGINGFACE_API_KEY to .env.local.',
         },
         { status: 500 }
       );
     }
 
-    // Connect to database
+    // Connect once per lambda cold start
     await dbConnect();
 
-    // Create AI response using Hugging Face (free!)
-    const response = await hf.textGeneration({
-      model: 'microsoft/DialoGPT-medium', // Free, good conversational model
-      inputs: `You are a compassionate AI therapist. Provide supportive, empathetic responses while maintaining professional boundaries. Focus on active listening, validation, and gentle guidance. Never give medical advice or replace professional therapy. Keep responses warm, understanding, and helpful.
+    // Compose a gentle, trauma‑informed prompt
+    const system = `You are a compassionate AI therapist. Be supportive, empathetic, and validation‑forward. 
+Keep boundaries: do not give medical advice or crisis instructions. Suggest professional help when appropriate.`;
 
-User: ${message}
-Therapist:`,
-      parameters: {
-        max_new_tokens: 150,
-        temperature: 0.7,
-        do_sample: true,
-        return_full_text: false
-      }
-    });
-
-    const aiResponse = response.generated_text || "I'm here to listen and support you. What's on your mind?";
-
-    // Save session to database if userId is provided
-    if (userId) {
-      const session = new Session({
-        userId,
-        messages: [
-          { role: 'user', content: message },
-          { role: 'assistant', content: aiResponse }
-        ]
+    let aiResponse = '';
+    try {
+      const response = await hf.textGeneration({
+        model: 'mistralai/Mistral-7B-Instruct-v0.2',
+        inputs: `${system}\n\nUser: ${message}\nTherapist:`,
+        parameters: {
+          max_new_tokens: 180,
+          temperature: 0.7,
+          top_p: 0.9,
+          repetition_penalty: 1.1,
+          return_full_text: false,
+        },
       });
-      await session.save();
+      aiResponse = (response as any).generated_text?.trim() || '';
+    } catch (inferenceErr) {
+      // Graceful fallback when the model is loading/rate-limited
+      aiResponse =
+        "I'm here with you. Thank you for sharing that. It sounds like this has been heavy to carry. " +
+        'What part feels most present right now? If you’re in immediate danger, please reach out to local emergency services.';
     }
 
-    return NextResponse.json({
-      success: true,
-      response: aiResponse
-    });
+    if (!aiResponse) {
+      aiResponse =
+        "I'm listening. Can you tell me a little more about what you’re feeling in this moment?";
+    }
 
+    // Save a lightweight session record when a user id is provided
+    if (userId) {
+      try {
+        const session = new (Session as any)({
+          userId,
+          messages: [
+            { role: 'user', content: message },
+            { role: 'assistant', content: aiResponse },
+          ],
+        });
+        await session.save();
+      } catch {
+        // Don’t fail the request if persistence fails
+      }
+    }
+
+    return NextResponse.json({ success: true, response: aiResponse });
   } catch (error) {
     console.error('Chat API error:', error);
-    
-    // Handle Hugging Face API errors specifically
-    if (error instanceof Error && error.message.includes('API key')) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid Hugging Face API key. Please check your configuration.' 
-        },
-        { status: 401 }
-      );
-    }
-
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to process chat message',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

@@ -22,7 +22,7 @@ export default function ChatInterface() {
     setMessages([
       {
         role: 'assistant',
-        content: 'Hello! I\'m here to listen and support you. How are you feeling today?',
+        content: "Hello! I'm here to listen and support you. How are you feeling today?",
         timestamp: new Date()
       }
     ]);
@@ -69,7 +69,7 @@ export default function ChatInterface() {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'I\'m sorry, I\'m having trouble responding right now. Please try again in a moment.',
+        content: "I'm sorry, I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -88,7 +88,7 @@ export default function ChatInterface() {
   // Don't render until client is ready to prevent hydration mismatch
   if (!isClient) {
     return (
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg border">
+      <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg border">
         <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
           <div className="flex items-center space-x-3">
             <MessageCircle className="h-6 w-6" />
@@ -106,7 +106,7 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg border">
+    <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg border">
       {/* Chat Header */}
       <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
         <div className="flex items-center space-x-3">
@@ -128,7 +128,7 @@ export default function ChatInterface() {
             <div
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-accent text-accent-foreground'
                   : 'bg-muted text-foreground'
               }`}
             >
