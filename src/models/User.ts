@@ -13,7 +13,6 @@ const userSchema = new Schema<IUser>(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
@@ -35,7 +34,7 @@ const userSchema = new Schema<IUser>(
 );
 
 // Create indexes
-userSchema.index({ email: 1 });
+userSchema.index({ email: 1 }, { unique: true });
 
 // Export the model safely (check if it already exists)
 export const User = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
