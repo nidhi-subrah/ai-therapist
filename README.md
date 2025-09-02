@@ -9,7 +9,7 @@ An AI-powered mental health coach and therapist application built with Next.js 1
 - **Backend**: Node.js with Next.js API routes
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: NextAuth.js (credentials provider)
-- **AI Integration**: OpenAI API with streaming chat
+- **AI Integration**: Gemini API with streaming chat
 - **Data Validation**: Zod schemas
 - **Charts & Analytics**: Recharts for progress visualization
 - **Utilities**: bcrypt, lucide-react, class-variance-authority, clsx, date-fns
