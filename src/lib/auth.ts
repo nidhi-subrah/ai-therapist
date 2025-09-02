@@ -23,25 +23,21 @@ export const authOptions: NextAuthOptions = {
           const user = await User.findOne({ email: credentials.email.toLowerCase() });
           
           if (!user) {
-            console.log('User not found:', credentials.email);
             return null;
           }
 
           const isPasswordValid = await comparePassword(credentials.password, user.hashedPassword);
           
           if (!isPasswordValid) {
-            console.log('Invalid password for user:', credentials.email);
             return null;
           }
 
-          console.log('User authenticated successfully:', credentials.email);
           return {
             id: user._id.toString(),
             email: user.email,
             name: user.name,
           };
         } catch (error) {
-          console.error('Auth error:', error);
           return null;
         }
       }
@@ -62,11 +58,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        // @ts-expect-error augmenting session type elsewhere
         session.user.id = token.id as string;
-        // @ts-expect-error augmenting session type elsewhere
         session.user.email = token.email as string;
-        // @ts-expect-error augmenting session type elsewhere
         session.user.name = token.name as string | undefined;
       }
       return session;

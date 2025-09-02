@@ -43,16 +43,14 @@ export function Navbar() {
         <div className="flex h-20 items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/" className="text-3xl font-extrabold bg-gradient-to-r from-teal-400 via-indigo-400 to-pink-400 bg-clip-text text-transparent drop-shadow-lg hover:scale-105 transition-transform duration-200">
-              AI Therapist
+              TheraMind
             </Link>
-            {currentUser && (
-              <div className="hidden md:flex items-center space-x-6 text-base font-medium">
-                <Link href="/history" className="text-indigo-700 hover:text-teal-600 transition-colors">History</Link>
-                <Link href="/check-in" className="text-indigo-700 hover:text-teal-600 transition-colors">Check-in</Link>
-                <Link href="/resources" className="text-indigo-700 hover:text-teal-600 transition-colors">Resources</Link>
-                <Link href="/about" className="text-indigo-700 hover:text-teal-600 transition-colors">About</Link>
-              </div>
-            )}
+            <div className="hidden md:flex items-center space-x-6 text-base font-medium">
+              <Link href="/history" className="text-indigo-700 hover:text-teal-600 transition-colors">History</Link>
+              <Link href="/check-in" className="text-indigo-700 hover:text-teal-600 transition-colors">Check-in</Link>
+              <Link href="/resources" className="text-indigo-700 hover:text-teal-600 transition-colors">Resources</Link>
+              <Link href="/about" className="text-indigo-700 hover:text-teal-600 transition-colors">About</Link>
+            </div>
           </div>
           <div className="flex items-center space-x-6">
             {currentUser ? (

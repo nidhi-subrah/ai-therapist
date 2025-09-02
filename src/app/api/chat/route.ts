@@ -37,8 +37,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Google AI API Key exists:', !!process.env.GOOGLE_AI_API_KEY);
-    console.log('Conversation length:', conversation?.length || 0);
 
     if (!process.env.GOOGLE_AI_API_KEY) {
       return NextResponse.json(
@@ -71,22 +69,17 @@ Keep responses conversational, supportive, and focused on the user's emotional w
       { role: 'user', content: `${systemPrompt}\n\n${conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n')}\nUser: ${message}` }
     ];
 
-    console.log('Sending to Google AI with conversation history');
 
     let aiResponse = '';
 
     try {
-      console.log('Calling Google AI API...');
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const result = await model.generateContent(messages[0].content);
       aiResponse = result.response.text().trim();
       
-      console.log('Google AI success, response length:', aiResponse.length);
-      console.log('Response preview:', aiResponse.substring(0, 100) + '...');
       
     } catch (error) {
-      console.error('Google AI API failed:', error);
       
       // Smart fallback based on conversation context
       const userMessages = conversation?.filter(m => m.role === 'user') || [];
@@ -105,7 +98,6 @@ Keep responses conversational, supportive, and focused on the user's emotional w
       }
     }
 
-    console.log('Final response length:', aiResponse.length);
 
     // Save or update the conversation session if user is authenticated
     if (userId) {
@@ -128,7 +120,6 @@ Keep responses conversational, supportive, and focused on the user's emotional w
           );
           activeSession.updatedAt = new Date();
           await activeSession.save();
-          console.log('Updated existing chat session for user:', userId);
         } else {
           // Create new session
           const newSession = new Session({
@@ -139,18 +130,14 @@ Keep responses conversational, supportive, and focused on the user's emotional w
             ],
           });
           await newSession.save();
-          console.log('Created new chat session for user:', userId);
         }
       } catch (persistErr) {
-        console.error('Failed to save chat session:', persistErr);
       }
     } else {
-      console.log('No user ID found, skipping session save');
     }
 
     return NextResponse.json({ success: true, response: aiResponse });
   } catch (error) {
-    console.error('Chat API error:', error);
     return NextResponse.json(
       {
         success: false,

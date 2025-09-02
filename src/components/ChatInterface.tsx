@@ -90,101 +90,98 @@ export default function ChatInterface() {
   // Don't render until client is ready to prevent hydration mismatch
   if (!isClient) {
     return (
-      <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg border">
-        <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
-          <div className="flex items-center space-x-3">
-            <MessageCircle className="h-6 w-6" />
-            <h2 className="text-xl font-semibold">AI Therapist Chat</h2>
-          </div>
-          <p className="text-sm opacity-90 mt-1">
-            Your compassionate AI companion for emotional support
-          </p>
+      <div className="max-w-4xl mx-auto bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#BDE4E1] animate-fade-in">
+        <div className="bg-gradient-to-r from-[#BDE4E1] via-[#F1AB86] to-[#98473E] text-[#4A6C6F] p-6 rounded-t-3xl flex items-center space-x-4">
+          <MessageCircle className="h-8 w-8 text-[#98473E]" />
+          <h2 className="text-2xl font-bold tracking-tight">TheraMind Chat</h2>
         </div>
         <div className="h-96 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading chat...</div>
+          <div className="text-[#875C74] animate-fade-in">Loading chat...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg border">
+    <div className="max-w-4xl mx-auto bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#BDE4E1] animate-fade-in">
       {/* Chat Header */}
-      <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
-        <div className="flex items-center space-x-3">
-          <MessageCircle className="h-6 w-6" />
-          <h2 className="text-xl font-semibold">AI Therapist Chat</h2>
-        </div>
-        <p className="text-sm opacity-90 mt-1">
-          Your compassionate AI companion for emotional support
-        </p>
-        {!session?.user?.id && (
-          <p className="text-xs opacity-75 mt-2">
-            💡 Sign in to save your conversations and track progress
-          </p>
-        )}
-        {session?.user?.id && (
-          <p className="text-xs opacity-75 mt-2">
-            ✅ Signed in as {session.user.email} - conversations will be saved
-          </p>
-        )}
+      <div className="bg-gradient-to-r from-[#BDE4E1] via-[#F1AB86] to-[#98473E] text-[#4A6C6F] p-6 rounded-t-3xl flex items-center space-x-4">
+        <MessageCircle className="h-8 w-8 text-[#98473E]" />
+        <h2 className="text-2xl font-bold tracking-tight">TheraMind Chat</h2>
+        <span className="ml-auto text-xs font-medium text-[#875C74]">
+          {session?.user?.id ? `Signed in as ${session.user.email}` : 'Anonymous'}
+        </span>
       </div>
-
       {/* Messages Area */}
-      <div className="h-96 overflow-y-auto p-4 space-y-4">
+      <div className="h-96 overflow-y-auto p-6 space-y-6 bg-gradient-to-br from-[#F9EDCC] via-[#BDE4E1] to-[#F1AB86] rounded-b-3xl">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex items-end ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
           >
+            {message.role === 'assistant' && (
+              <div className="flex-shrink-0 mr-2">
+                <div className="w-8 h-8 rounded-full bg-[#4A6C6F] flex items-center justify-center shadow">
+                  <MessageCircle className="h-5 w-5 text-white" />
+                </div>
+              </div>
+            )}
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+              className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-lg ${
                 message.role === 'user'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-muted text-foreground'
-              }`}
+                  ? 'bg-gradient-to-r from-[#98473E] via-[#F1AB86] to-[#BDE4E1] text-white'
+                  : 'bg-white text-[#4A6C6F] border border-[#BDE4E1]'
+              } animate-slide-in`}
             >
-              <p className="text-sm">{message.content}</p>
-              <p className="text-xs opacity-70 mt-1">
-                {message.timestamp.toLocaleTimeString()}
+              <p className="text-base leading-relaxed whitespace-pre-line">{message.content}</p>
+              <p className="text-xs opacity-60 mt-2 text-right">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
+            {message.role === 'user' && (
+              <div className="flex-shrink-0 ml-2">
+                <div className="w-8 h-8 rounded-full bg-[#98473E] flex items-center justify-center shadow">
+                  <span className="text-white font-bold">You</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-muted text-foreground px-4 py-2 rounded-lg">
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-white text-[#4A6C6F] px-5 py-3 rounded-2xl shadow-lg border border-[#BDE4E1]">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-[#4A6C6F] rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-[#98473E] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-[#F1AB86] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
         )}
       </div>
-
       {/* Input Area */}
-      <div className="border-t p-4">
-        <div className="flex space-x-2">
+      <div className="border-t p-6 bg-white rounded-b-3xl">
+        <div className="flex items-end space-x-3">
           <textarea
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message here..."
-            className="flex-1 resize-none border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="Type your message..."
+            className="flex-1 resize-none border border-[#BDE4E1] rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#4A6C6F] focus:border-transparent bg-[#F9EDCC] placeholder:text-[#875C74]"
             rows={2}
             disabled={isLoading}
+            style={{ minHeight: '48px' }}
           />
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-[#4A6C6F] via-[#F1AB86] to-[#98473E] text-white px-6 py-3 rounded-full shadow-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-[#4A6C6F] disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Send message"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           </button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-[#875C74] mt-3 text-right">
           Press Enter to send, Shift+Enter for new line
         </p>
       </div>
