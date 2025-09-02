@@ -1,4 +1,4 @@
-# AI Therapist
+# TheraMind- Your Personalized AI Therapist
 
 An AI-powered mental health coach and therapist application built with Next.js 14, featuring chat therapy, daily mood check-ins, and progress tracking.
 
